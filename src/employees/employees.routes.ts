@@ -1,18 +1,20 @@
 import { NextFunction, Request, Response, Router } from "express";
-import { User } from "../../entity/user";
-import { UsersController } from "./employees.controller";
-
+import { RequestHandler } from "express-jwt";
+import { Employee } from "../../entity/employee";
+import { JwtToken } from "../../interfaces/global/jwt-token.interface";
+import { EmployeesController } from "./employees.controller";
+var jwt = require("express-jwt");
 var employeesRouter = Router();
 
 // employeesRouter.post(
 //   "/signup",
 //   async (req: Request, res: Response, next: NextFunction) => {
-//     const username = req.body.username;
+//     const employeename = req.body.employeename;
 //     const password = req.body.password;
-//     const userController = new UsersController();
+//     const employeeController = new employeesController();
 //     try {
-//       const newUser = await userController.signup(username, password);
-//       res.send(newUser);
+//       const newemployee = await employeeController.signup(employeename, password);
+//       res.send(newemployee);
 //     } catch (error) {
 //       res.status(501).send(error.message);
 //     }
@@ -22,12 +24,15 @@ var employeesRouter = Router();
 employeesRouter.post(
   "/login",
   async (req: Request, res: Response, next: NextFunction) => {
-    const username = req.body.username;
+    const employeename = req.body.employeename;
     const password = req.body.password;
-    const userController = new UsersController();
+    const employeeController = new EmployeesController();
     try {
-      const newUser = await userController.login(username, password);
-      res.send(newUser);
+      const newemployee = await employeeController.login(
+        employeename,
+        password
+      );
+      res.send(newemployee);
     } catch (error) {
       console.log(error, "ERROR");
       res.status(501).send(error.message);
@@ -36,13 +41,15 @@ employeesRouter.post(
 );
 employeesRouter.post(
   "/create",
+  jwt({ secret: "NKODEX", algorithms: ["HS256"] }),
   async (req: Request, res: Response, next: NextFunction) => {
-    const user: User = req.body;
+    const employee: Employee = req.body;
+    const user = req.user as JwtToken;
 
-    const userController = new UsersController();
+    const employeeController = new EmployeesController();
     try {
-      const createdUser = await userController.create(user);
-      res.send(createdUser);
+      const createdEmployee = await employeeController.create(employee, user);
+      res.send(createdEmployee);
     } catch (error) {
       console.log(error, "ERROR");
       res.status(501).send(error.message);
@@ -50,14 +57,14 @@ employeesRouter.post(
   }
 );
 employeesRouter.get(
-  "/findOne",
+  "/find-one",
   async (req: Request, res: Response, next: NextFunction) => {
-    const username = req.body.username;
-    const password = req.body.password;
-    const userController = new UsersController();
+    const id = req.query.id as string;
+    console.log(id)
+    const employeeController = new EmployeesController();
     try {
-      const newUser = await userController.signup(username, password);
-      res.send(newUser);
+      const newEmployee = await employeeController.findOne(id);
+      res.send(newEmployee);
     } catch (error) {
       res.status(501).send(error.message);
     }
@@ -65,11 +72,11 @@ employeesRouter.get(
 );
 
 employeesRouter.get(
-  "/findAll",
+  "/find-all",
   async (req: Request, res: Response, next: NextFunction) => {
-    const userController = new UsersController();
+    const employeeController = new EmployeesController();
     try {
-      const foundResult = await userController.findAll();
+      const foundResult = await employeeController.findAll();
       res.send(foundResult);
     } catch (error) {
       res.status(501).send(error.message);
@@ -80,11 +87,11 @@ employeesRouter.get(
 employeesRouter.put(
   "/edit",
   async (req: Request, res: Response, next: NextFunction) => {
-    const user: User = req.body;
-    const userController = new UsersController();
+    const employee: Employee = req.body;
+    const employeeController = new EmployeesController();
     try {
-      const updatedUser = await userController.update(user);
-      res.send(updatedUser);
+      const updatedemployee = await employeeController.update(employee);
+      res.send(updatedemployee);
     } catch (error) {
       res.status(501).send(error.message);
     }

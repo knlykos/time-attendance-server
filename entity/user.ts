@@ -61,7 +61,10 @@ export class User {
   state: string;
 
   @Column({ nullable: true })
-  zipCode: number;
+  zipCode: string;
+
+  @Column({ nullable: true, default: "now()" })
+  hireDate: Date;
 
   @CreateDateColumn()
   createdAt: Date;

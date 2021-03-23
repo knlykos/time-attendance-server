@@ -65,7 +65,7 @@ userRouter.get(
 );
 
 userRouter.get(
-  "/find-all",
+  "/findAll",
   async (req: Request, res: Response, next: NextFunction) => {
     const userController = new UsersController();
     try {
