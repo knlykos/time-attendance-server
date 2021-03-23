@@ -1,7 +1,11 @@
-import { getRepository } from "typeorm";
+import {
+  getRepository,
+  UsingJoinColumnOnlyOnOneSideAllowedError,
+} from "typeorm";
 import { Employee } from "../../entity/employee";
 import { hash, compare } from "bcrypt";
 import { sign, SignOptions } from "jsonwebtoken";
+import { JwtToken } from "../../interfaces/global/jwt-token.interface";
 
 interface Token extends SignOptions {
   id: string;
@@ -9,7 +13,7 @@ interface Token extends SignOptions {
   firstName: string;
   lastName: string;
 }
-export class employeesController {
+export class EmployeesController {
   async findOne(id: string) {
     try {
       const result = await getRepository(Employee).findOne({
@@ -30,6 +34,19 @@ export class employeesController {
     }
   }
 
+  randomString(len: number, an: string) {
+    an = an && an.toLowerCase();
+    var str = "",
+      i = 0,
+      min = an == "a" ? 10 : 0,
+      max = an == "n" ? 10 : 62;
+    for (; i++ < len; ) {
+      var r = (Math.random() * (max - min) + min) << 0;
+      str += String.fromCharCode((r += r > 9 ? (r < 36 ? 55 : 61) : 48));
+    }
+    return str;
+  }
+
   generateUsername(firstName: string, lastName: string, dateBirth: Date) {
     let firstLetter = "";
     let secondLetter = "";
@@ -39,10 +56,9 @@ export class employeesController {
       const firstNameArray = firstName.split(" ");
       firstLetter = firstNameArray[0][0];
       if (firstNameArray.length > 1) {
-
         secondLetter = firstNameArray[1][0];
       } else {
-        secondLetter = 'X'
+        secondLetter = "X";
       }
     }
 
@@ -52,15 +68,29 @@ export class employeesController {
       if (lastNameArray.length > 1) {
         fourthLetter = lastNameArray[1][0];
       } else {
-        fourthLetter = 'X'
+        fourthLetter = "X";
       }
-      
     }
-    const username = firstLetter + secondLetter + dateBirth.getDate(); + thirdLetter + fourthLetter;
+    const randomLetters = this.randomString(3, firstLetter);
+    dateBirth = new Date(dateBirth);
+    console.log(dateBirth.getDate());
+    const username =
+      firstLetter +
+      secondLetter +
+      dateBirth.getDate() +
+      thirdLetter +
+      randomLetters;
     return username;
   }
 
-  async create(employee: Employee) {
+  async create(employee: Employee, user: JwtToken) {
+    employee.username = this.generateUsername(
+      employee.firstName,
+      employee.lastName,
+      employee.dateBirth
+    );
+    employee.createdBy = user.id;
+
     try {
       const createdemployee = await getRepository(Employee).save(employee);
       return createdemployee;
@@ -72,6 +102,7 @@ export class employeesController {
   async update(employee: Employee) {
     try {
       const updatedEmployee = await getRepository(Employee).update(
+      
         { id: employee.id },
         employee
       );
@@ -81,30 +112,30 @@ export class employeesController {
     }
   }
 
-  // async signup(username: string, password: string) {
-  //   try {
-  //     const passwordHashed = await new Promise<string>((resolve, reject) => {
-  //       hash(password, 10, (err, hash) => {
-  //         if (err) {
-  //           reject(err);
-  //         }
-  //         resolve(hash);
-  //       });
-  //     });
-  //     const employee = new Employee();
-  //     employee.username = username;
-  //     employee.password = passwordHashed;
+  async signup(username: string, password: string) {
+    try {
+      const passwordHashed = await new Promise<string>((resolve, reject) => {
+        hash(password, 10, (err, hash) => {
+          if (err) {
+            reject(err);
+          }
+          resolve(hash);
+        });
+      });
+      const employee = new Employee();
+      employee.username = username;
+      employee.password = passwordHashed;
 
-  //     employee.createdBy = "";
-  //     employee.updatedBy = "";
-  //     employee.deleteBy = "";
-  //     const result = await getRepository(Employee).save(employee);
-  //     return result;
-  //   } catch (error) {
-  //     // console.log(error);
-  //     throw new Error(error);
-  //   }
-  // }
+      employee.createdBy = "";
+      employee.updatedBy = "";
+      employee.deleteBy = "";
+      const result = await getRepository(Employee).save(employee);
+      return result;
+    } catch (error) {
+      // console.log(error);
+      throw new Error(error);
+    }
+  }
 
   async login(username: string, password: string) {
     try {

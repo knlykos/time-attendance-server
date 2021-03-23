@@ -15,13 +15,13 @@ export class Employee {
   @Column({ nullable: false, default: false })
   active: boolean;
 
-  @Column({ nullable: false })
+  @Column({ nullable: false, default: 1 })
   employeeRole: number;
 
   @Column({ nullable: false, unique: true })
   username: string;
 
-  @Column({ nullable: false })
+  @Column({ nullable: false, default: "123456" })
   password: string;
 
   @Column({ nullable: true })
@@ -61,7 +61,10 @@ export class Employee {
   state: string;
 
   @Column({ nullable: true })
-  zipCode: number;
+  zipCode: string;
+
+  @Column({ nullable: true, default: "now()" })
+  hireDate: Date;
 
   @CreateDateColumn()
   createdAt: Date;
