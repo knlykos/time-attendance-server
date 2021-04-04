@@ -121,6 +121,7 @@ export class EmployeesController {
           }
           resolve(hash);
         });
+        
       });
       const employee = new Employee();
       employee.username = username;
