@@ -1,25 +1,12 @@
+import { Prisma } from ".prisma/client";
 import { NextFunction, Request, Response, Router } from "express";
 import { RequestHandler } from "express-jwt";
 import { Employee } from "../../entity/employee";
 import { JwtToken } from "../../interfaces/global/jwt-token.interface";
+import { authenticatorToken } from "../commun/authenticator-token";
 import { EmployeesController } from "./employees.controller";
 var jwt = require("express-jwt");
 var employeesRouter = Router();
-
-// employeesRouter.post(
-//   "/signup",
-//   async (req: Request, res: Response, next: NextFunction) => {
-//     const employeename = req.body.employeename;
-//     const password = req.body.password;
-//     const employeeController = new employeesController();
-//     try {
-//       const newemployee = await employeeController.signup(employeename, password);
-//       res.send(newemployee);
-//     } catch (error) {
-//       res.status(501).send(error.message);
-//     }
-//   }
-// );
 
 employeesRouter.post(
   "/login",
@@ -41,14 +28,19 @@ employeesRouter.post(
 );
 employeesRouter.post(
   "/create",
-  jwt({ secret: "NKODEX", algorithms: ["HS256"] }),
+  authenticatorToken,
   async (req: Request, res: Response, next: NextFunction) => {
-    const employee: Employee = req.body;
+    const employee: Prisma.employeeCreateInput = req.body.employee;
+    const departmentId: number = req.body.departmentId;
     const user = req.user as JwtToken;
 
     const employeeController = new EmployeesController();
     try {
-      const createdEmployee = await employeeController.create(employee, user);
+      const createdEmployee = await employeeController.create(
+        employee,
+        departmentId,
+        user
+      );
       res.send(createdEmployee);
     } catch (error) {
       console.log(error, "ERROR");
@@ -59,8 +51,7 @@ employeesRouter.post(
 employeesRouter.get(
   "/find-one",
   async (req: Request, res: Response, next: NextFunction) => {
-    const id = req.query.id as string;
-    console.log(id)
+    const id = Number(req.query.id);
     const employeeController = new EmployeesController();
     try {
       const newEmployee = await employeeController.findOne(id);
@@ -87,10 +78,11 @@ employeesRouter.get(
 employeesRouter.put(
   "/edit",
   async (req: Request, res: Response, next: NextFunction) => {
-    const employee: Employee = req.body;
+    const employee: Prisma.employeeUpdateInput = req.body;
+    const id: number = Number(req.query.id);
     const employeeController = new EmployeesController();
     try {
-      const updatedemployee = await employeeController.update(employee);
+      const updatedemployee = await employeeController.update(employee, id);
       res.send(updatedemployee);
     } catch (error) {
       res.status(501).send(error.message);

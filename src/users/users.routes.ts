@@ -1,3 +1,4 @@
+import { Prisma } from ".prisma/client";
 import { NextFunction, Request, Response, Router } from "express";
 import { User } from "../../entity/user";
 import { UsersController } from "./users.controller";
@@ -7,13 +8,16 @@ var userRouter = Router();
 userRouter.post(
   "/signup",
   async (req: Request, res: Response, next: NextFunction) => {
+    const email = req.body.email;
+    console.log(email);
     const username = req.body.username;
     const password = req.body.password;
     const userController = new UsersController();
     try {
-      const newUser = await userController.signup(username, password);
+      const newUser = await userController.signup(email, username, password);
       res.send(newUser);
     } catch (error) {
+      console.log(error);
       res.status(501).send(error.message);
     }
   }
@@ -37,7 +41,7 @@ userRouter.post(
 userRouter.post(
   "/create",
   async (req: Request, res: Response, next: NextFunction) => {
-    const user: User = req.body;
+    const user: Prisma.userCreateInput = req.body;
 
     const userController = new UsersController();
     try {
@@ -50,13 +54,12 @@ userRouter.post(
   }
 );
 userRouter.get(
-  "/findOne",
+  "/find-by-id",
   async (req: Request, res: Response, next: NextFunction) => {
-    const username = req.body.username;
-    const password = req.body.password;
+    const id = Number(req.params.id);
     const userController = new UsersController();
     try {
-      const newUser = await userController.signup(username, password);
+      const newUser = await userController.findOne(id);
       res.send(newUser);
     } catch (error) {
       res.status(501).send(error.message);

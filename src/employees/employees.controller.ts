@@ -6,6 +6,15 @@ import { Employee } from "../../entity/employee";
 import { hash, compare } from "bcrypt";
 import { sign, SignOptions } from "jsonwebtoken";
 import { JwtToken } from "../../interfaces/global/jwt-token.interface";
+import { Prisma, PrismaClient } from ".prisma/client";
+const prisma = new PrismaClient({
+  log: [
+    {
+      emit: "event",
+      level: "query",
+    },
+  ],
+});
 
 interface Token extends SignOptions {
   id: string;
@@ -14,11 +23,13 @@ interface Token extends SignOptions {
   lastName: string;
 }
 export class EmployeesController {
-  async findOne(id: string) {
+  async findOne(id: number) {
     try {
-      const result = await getRepository(Employee).findOne({
-        where: { id: id },
-      });
+      // const result = await getRepository(Employee).findOne({
+      //   where: { id: id },
+      // });
+
+      const result = await prisma.employee.findUnique({ where: { id: id } });
       return result;
     } catch (error) {
       throw new Error(error);
@@ -27,7 +38,8 @@ export class EmployeesController {
 
   async findAll() {
     try {
-      const foundResult = await getRepository(Employee).find();
+      // const foundResult = await getRepository(Employee).find();
+      const foundResult = await prisma.employee.findMany();
       return foundResult;
     } catch (error) {
       throw new Error(error);
@@ -83,29 +95,35 @@ export class EmployeesController {
     return username;
   }
 
-  async create(employee: Employee, user: JwtToken) {
+  async create(
+    employee: Prisma.employeeCreateInput,
+    departmentId: number,
+    user: JwtToken
+  ) {
     employee.username = this.generateUsername(
-      employee.firstName,
-      employee.lastName,
-      employee.dateBirth
+      employee.firstname,
+      employee.lastname,
+      employee.dateBirth as Date
     );
     employee.createdBy = user.id;
 
     try {
-      const createdemployee = await getRepository(Employee).save(employee);
-      return createdemployee;
+      // const createdemployee = await getRepository(Employee).save(employee);
+      const employeeCreated = await prisma.employee.create({
+        data: { ...employee, department: { connect: { id: departmentId } } },
+      });
+      return employeeCreated;
     } catch (error) {
       throw new Error(error);
     }
   }
 
-  async update(employee: Employee) {
+  async update(employee: Prisma.employeeUpdateInput, employeeId: number) {
     try {
-      const updatedEmployee = await getRepository(Employee).update(
-      
-        { id: employee.id },
-        employee
-      );
+      const updatedEmployee = await prisma.employee.update({
+        data: employee,
+        where: { id: employeeId },
+      });
       return updatedEmployee;
     } catch (error) {
       throw new Error(error);

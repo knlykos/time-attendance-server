@@ -2,17 +2,30 @@ import { getRepository } from "typeorm";
 import { User } from "../../entity/user";
 import { hash, compare } from "bcrypt";
 import { sign, SignOptions } from "jsonwebtoken";
+import { Prisma, PrismaClient } from "@prisma/client";
+const prisma = new PrismaClient({
+  log: [
+    {
+      emit: "event",
+      level: "query",
+    },
+  ],
+});
+
 
 interface Token extends SignOptions {
-  id: string;
+  id: number;
   role: number;
-  firstName: string;
-  lastName: string;
+  firstname: string;
+  lastname: string;
 }
 export class UsersController {
-  async findOne(id: string) {
+  async findOne(id: number) {
     try {
-      const result = await getRepository(User).findOne({ where: { id: id } });
+      // const result = await getRepository(User).findOne({ where: { id: id } });
+      const result = await prisma.user.findUnique({
+        where: { id: id },
+      });
       return result;
     } catch (error) {
       throw new Error(error);
@@ -21,17 +34,19 @@ export class UsersController {
 
   async findAll() {
     try {
-      const foundResult = await getRepository(User).find();
+      // const foundResult = await getRepository(User).find();
+      const foundResult = await prisma.user.findMany();
       return foundResult;
     } catch (error) {
       throw new Error(error);
     }
   }
 
-  async create(user: User) {
-    hash;
+  async create(user: Prisma.userCreateInput) {
+    console.log(user);
     try {
-      const createdUser = await getRepository(User).save(user);
+      // const createdUser = await getRepository(User).save(user);
+      const createdUser = await prisma.user.create({ data: user });
       return createdUser;
     } catch (error) {
       throw new Error(error);
@@ -40,15 +55,24 @@ export class UsersController {
 
   async update(user: User) {
     try {
-      const updatedUser = await getRepository(User).update({ id: user.id }, user);
+      const updatedUser = await getRepository(User).update(
+        { id: user.id },
+        user
+      );
       return updatedUser;
     } catch (error) {
       throw new Error(error);
     }
   }
 
-  async signup(username: string, password: string) {
+  async signup(email: string, username: string, password: string) {
+    console.log(email);
     try {
+      const userData: Prisma.userCreateInput = {
+        username: username,
+        password: password,
+        email: email,
+      };
       const passwordHashed = await new Promise<string>((resolve, reject) => {
         hash(password, 10, (err, hash) => {
           if (err) {
@@ -57,14 +81,14 @@ export class UsersController {
           resolve(hash);
         });
       });
-      const user = new User();
-      user.username = username;
-      user.password = passwordHashed;
-      user.userRole = 3;
-      user.createdBy = "";
-      user.updatedBy = "";
-      user.deleteBy = "";
-      const result = await getRepository(User).save(user);
+      const user: Prisma.userCreateInput = {
+        email: email,
+        username: username,
+        password: passwordHashed,
+      };
+
+      // const result = await getRepository(User).save(user);
+      const result = await prisma.user.create({ data: user });
       return result;
     } catch (error) {
       // console.log(error);
@@ -74,10 +98,17 @@ export class UsersController {
 
   async login(username: string, password: string) {
     try {
-      const user = await getRepository(User).findOne({
+      const user = await prisma.user.findUnique({
         where: { username: username },
       });
-
+      console.log(user);
+      // const user = await getRepository(User).findOne({
+      //   where: { username: username },
+      // });
+if (user === null) {
+  throw new Error("username doesn't found");
+  
+}
       const passwordHashed = await new Promise<boolean>((resolve, reject) => {
         compare(password, user.password, (err, result) => {
           if (err) {
@@ -91,8 +122,8 @@ export class UsersController {
           issuer: "NKODEX",
           subject: user.username,
           id: user.id,
-          firstName: user.firstName,
-          lastName: user.lastName,
+          firstname: user.firstname,
+          lastname: user.lastname,
           role: user.userRole,
         };
 
@@ -101,7 +132,7 @@ export class UsersController {
       }
       throw new Error("Password not match");
     } catch (error) {
-      // console.log(error);
+      console.log(error);
       throw new Error(error);
     }
   }

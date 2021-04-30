@@ -79,7 +79,7 @@ export class Employee {
   updatedBy: string;
 
   @DeleteDateColumn()
-  deleteDate: Date;
+  deleteAt: Date;
 
   @Column({ nullable: true })
   deleteBy: string;

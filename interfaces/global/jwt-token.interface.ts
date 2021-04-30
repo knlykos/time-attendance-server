@@ -1,7 +1,7 @@
 export interface JwtToken {
   issuer: string;
   subject: string;
-  id: string;
+  id: number;
   firstName: null;
   lastName: null;
   role: number;
